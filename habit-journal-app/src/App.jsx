@@ -203,7 +203,7 @@ function Onboarding({ onFinish }) {
   const slide = ONBOARDING_SLIDES[i];
   const last = i === ONBOARDING_SLIDES.length - 1;
   return (
-    <div style={{ background: "#EDE8DD" }} className="min-h-screen flex flex-col justify-between p-6">
+    <div style={{ background: "#EDE8DD", minHeight: "100dvh", paddingTop: "calc(env(safe-area-inset-top) + 1.5rem)", paddingBottom: "calc(env(safe-area-inset-bottom) + 1.5rem)", paddingLeft: "1.5rem", paddingRight: "1.5rem" }} className="flex flex-col justify-between">
       <div className="flex justify-end">
         <button onClick={onFinish} className="text-xs text-stone-400 underline">
           スキップ
@@ -357,7 +357,7 @@ export default function HabitJournal() {
 
   if (loading) {
     return (
-      <div style={{ background: "#EDE8DD", minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center" }}>
+      <div style={{ background: "#EDE8DD", minHeight: "100dvh", display: "flex", alignItems: "center", justifyContent: "center" }}>
         <p style={{ fontFamily: "'Hiragino Kaku Gothic ProN', sans-serif", color: "#6B675E" }}>読み込み中…</p>
       </div>
     );
@@ -438,8 +438,14 @@ export default function HabitJournal() {
 
   return (
     <div
-      style={{ background: "#EDE8DD", minHeight: "100vh", fontFamily: "'Hiragino Kaku Gothic ProN', 'Yu Gothic', sans-serif", color: "#2A2A28" }}
-      className="pb-16"
+      style={{
+        background: "#EDE8DD",
+        minHeight: "100dvh",
+        fontFamily: "'Hiragino Kaku Gothic ProN', 'Yu Gothic', sans-serif",
+        color: "#2A2A28",
+        paddingTop: "env(safe-area-inset-top)",
+        paddingBottom: "calc(env(safe-area-inset-bottom) + 4rem)",
+      }}
     >
       <div className="max-w-md mx-auto px-5 pt-8">
         <p style={{ fontFamily: "'SFMono-Regular', Menlo, monospace", letterSpacing: "0.15em" }} className="text-xs text-stone-500 uppercase mb-1">
