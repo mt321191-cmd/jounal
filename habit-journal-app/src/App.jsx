@@ -89,17 +89,14 @@ function addDays(dateStr, n) {
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
 }
 
-// このデプロイ版はブラウザの localStorage を使って保存する
-// (window.storage は Claude のアーティファクト内でのみ使えるAPIのため)
-const hasStorage = () => typeof window !== "undefined" && window.localStorage;
+// window.storage が使えない環境でもアプリが落ちないようにするラッパー
+const hasStorage = () => typeof window !== "undefined" && window.storage;
 
 async function safeGet(key) {
   if (!hasStorage()) return null;
   try {
-    const raw = window.localStorage.getItem(key);
-    return raw === null ? null : { value: raw };
-  } catch (e) {
-    console.error("storage get failed", key, e);
+    return await window.storage.get(key, false);
+  } catch {
     return null;
   }
 }
@@ -107,7 +104,7 @@ async function safeGet(key) {
 async function safeSet(key, value) {
   if (!hasStorage()) return false;
   try {
-    window.localStorage.setItem(key, value);
+    await window.storage.set(key, value, false);
     return true;
   } catch (e) {
     console.error("storage set failed", key, e);
@@ -118,7 +115,7 @@ async function safeSet(key, value) {
 async function safeDelete(key) {
   if (!hasStorage()) return false;
   try {
-    window.localStorage.removeItem(key);
+    await window.storage.delete(key, false);
     return true;
   } catch (e) {
     console.error("storage delete failed", key, e);
@@ -248,6 +245,7 @@ export default function HabitJournal() {
 
   const [goal, setGoal] = useState(null); // { title, createdDate }
   const [goalDraft, setGoalDraft] = useState("");
+  const [visionDraft, setVisionDraft] = useState("");
   const [actionLogs, setActionLogs] = useState({}); // { date: "done" | "skip" | "freeze" }
   const [entries, setEntries] = useState([]);
   const [text, setText] = useState("");
@@ -293,9 +291,10 @@ export default function HabitJournal() {
 
   const handleCreateGoal = () => {
     if (!goalDraft.trim()) return;
-    const g = { title: goalDraft.trim(), createdDate: todayStr() };
+    const g = { title: goalDraft.trim(), vision: visionDraft.trim(), createdDate: todayStr() };
     setGoal(g);
     setGoalDraft("");
+    setVisionDraft("");
     setActionLogs({});
     setGraduationDismissed(false);
     safeSet("goal", JSON.stringify(g)).then((ok) => {
@@ -452,7 +451,7 @@ export default function HabitJournal() {
           Habit Journal
         </p>
         <h1 style={{ fontFamily: "'Hiragino Mincho ProN', 'Yu Mincho', serif" }} className="text-2xl font-bold mb-6">
-          習慣化ジャーナル
+          30日間習慣ジャーナル
         </h1>
 
         {error && <p className="text-xs text-red-700 mb-3">{error}</p>}
@@ -472,6 +471,17 @@ export default function HabitJournal() {
               value={goalDraft}
               onChange={(e) => setGoalDraft(e.target.value)}
               placeholder="例）夜11時に寝る"
+              style={{ borderColor: "#2A2A28" }}
+              className="w-full border rounded-lg p-2 text-sm bg-white mb-3 focus:outline-none focus:ring-2"
+            />
+            <label className="text-xs text-stone-500 mb-1 block">
+              達成できたら、どうなっていたい？（任意）
+            </label>
+            <textarea
+              value={visionDraft}
+              onChange={(e) => setVisionDraft(e.target.value)}
+              placeholder="例）朝スッキリ起きて、仕事に集中できている"
+              rows={2}
               style={{ borderColor: "#2A2A28" }}
               className="w-full border rounded-lg p-2 text-sm bg-white mb-3 focus:outline-none focus:ring-2"
             />
@@ -522,11 +532,32 @@ export default function HabitJournal() {
         {/* 目標がある場合 */}
         {goal && stats && (
           <>
+            <div className="mb-3">
+              <p className="text-xs font-bold text-stone-500 mb-0.5">目標</p>
+              <h2
+                style={{ fontFamily: "'Hiragino Mincho ProN', 'Yu Mincho', serif" }}
+                className="text-xl font-bold leading-snug break-words"
+              >
+                {goal.title}
+              </h2>
+              {goal.vision && (
+                <div
+                  style={{ background: "#EAF0E4", borderColor: "#3F5A2F" }}
+                  className="border-l-4 rounded-lg px-3 py-2.5 mt-2"
+                >
+                  <p className="text-[11px] font-bold mb-0.5" style={{ color: "#3F5A2F" }}>
+                    🎉 達成できたら
+                  </p>
+                  <p className="text-base font-bold leading-snug" style={{ color: "#2A2A28" }}>
+                    {goal.vision}
+                  </p>
+                </div>
+              )}
+            </div>
             <div style={{ borderColor: "#2A2A28", background: "#F5F2EA" }} className="border rounded-xl p-4 mb-4 flex items-center gap-4">
               <GrowthRing cycleDay={stats.cycleDay} />
               <div className="flex-1 min-w-0">
-                <p className="text-xs text-stone-500 mb-1 truncate">目標：{goal.title}</p>
-                <span style={{ background: stats.phase.color, color: "#F5F2EA" }} className="inline-block text-xs px-2 py-0.5 rounded-full mb-1">
+                <span style={{ background: stats.phase.color, color: "#F5F2EA" }} className="inline-block text-xs font-bold px-2 py-0.5 rounded-full mb-1">
                   {stats.phase.name}
                 </span>
                 <p className="text-sm font-semibold mb-1">{stats.phase.tagline}</p>
@@ -536,7 +567,7 @@ export default function HabitJournal() {
 
             {/* 今日のチェックイン */}
             <div style={{ borderColor: "#2A2A28" }} className="border rounded-xl p-4 mb-4 bg-white/40">
-              <p className="text-xs text-stone-500 mb-2">今日はやった？</p>
+              <p className="text-xs font-bold text-stone-600 mb-2">今日はやった？</p>
               <div className="flex gap-2 mb-2">
                 <button
                   onClick={() => handleCheckIn("done")}
