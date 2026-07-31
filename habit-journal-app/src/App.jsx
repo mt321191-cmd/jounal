@@ -756,105 +756,82 @@ export default function HabitJournal() {
                 </div>
               )}
             </div>
-            <div style={{ borderColor: "#2A2A28", background: "#F5F2EA" }} className="border rounded-xl p-4 mb-4 flex items-center gap-4">
-              <GrowthRing cycleDay={stats.cycleDay} />
-              <div className="flex-1 min-w-0">
-                <span style={{ background: stats.phase.color, color: "#F5F2EA" }} className="inline-block text-xs font-bold px-2 py-0.5 rounded-full mb-1">
-                  {stats.phase.name}
-                </span>
-                <p className="text-sm font-semibold mb-1">{stats.phase.tagline}</p>
-                <p className="text-xs text-stone-600 leading-relaxed">{stats.phase.detail}</p>
+            <div style={{ borderColor: "#2A2A28", background: "#F5F2EA" }} className="border rounded-xl mb-4 overflow-hidden">
+              <div className="p-4 flex items-center gap-4">
+                <GrowthRing cycleDay={stats.cycleDay} />
+                <div className="flex-1 min-w-0">
+                  <span style={{ background: stats.phase.color, color: "#F5F2EA" }} className="inline-block text-xs font-bold px-2 py-0.5 rounded-full mb-1">
+                    {stats.phase.name}
+                  </span>
+                  <p className="text-sm font-semibold mb-1">{stats.phase.tagline}</p>
+                  <p className="text-xs text-stone-600 leading-relaxed">{stats.phase.detail}</p>
+                </div>
               </div>
-            </div>
-
-            <button
-              onClick={() => {
-                setTimelineOpen(true);
-                setExpandedPhaseKey(stats.phase.key);
-              }}
-              style={{ borderColor: "#2A2A28" }}
-              className="w-full border rounded-lg py-2 text-sm mb-4 flex items-center justify-center gap-1"
-            >
-              全体の流れを見る（これまで・今・これから）
-              <span className="text-xs">▸</span>
-            </button>
-
-            {/* 全体の流れ：ボトムシート */}
-            <div
-              onClick={() => setTimelineOpen(false)}
-              style={{ background: "rgba(0,0,0,0.4)" }}
-              className={`fixed inset-0 z-30 transition-opacity duration-300 ${
-                timelineOpen ? "opacity-100 pointer-events-auto" : "opacity-0 pointer-events-none"
-              }`}
-            />
-            <div
-              style={{
-                background: "#EDE8DD",
-                borderTopLeftRadius: "20px",
-                borderTopRightRadius: "20px",
-                maxHeight: "82vh",
-                boxShadow: "0 -4px 24px rgba(0,0,0,0.15)",
-              }}
-              className={`fixed left-0 right-0 bottom-0 z-40 flex flex-col transition-transform duration-300 ease-out ${
-                timelineOpen ? "translate-y-0" : "translate-y-full"
-              }`}
-            >
-              <div className="max-w-md mx-auto w-full px-5 pt-3 flex flex-col overflow-hidden" style={{ maxHeight: "82vh" }}>
-                <div className="flex justify-center mb-3 shrink-0">
-                  <div style={{ background: "#D8D2C4" }} className="w-10 h-1.5 rounded-full" />
-                </div>
-                <div className="flex items-center justify-between mb-4 shrink-0">
-                  <h2 style={{ fontFamily: "'Hiragino Mincho ProN', 'Yu Mincho', serif" }} className="text-lg font-bold">
-                    全体の流れ
-                  </h2>
-                  <button onClick={() => setTimelineOpen(false)} className="text-xs text-stone-500 underline">
-                    閉じる
-                  </button>
-                </div>
-                <div
-                  className="space-y-2 overflow-y-auto"
-                  style={{ paddingBottom: "calc(env(safe-area-inset-bottom) + 1.5rem)" }}
+              <button
+                onClick={() => {
+                  setTimelineOpen((v) => !v);
+                  if (!timelineOpen) setExpandedPhaseKey(stats.phase.key);
+                }}
+                style={{ borderTop: "1px solid #2A2A28", background: "#EAE4D4" }}
+                className="w-full py-2.5 text-xs font-semibold flex items-center justify-center gap-1"
+              >
+                全体の流れを見る（これまで・今・これから）
+                <span
+                  className="text-xs inline-block transition-transform duration-300"
+                  style={{ transform: timelineOpen ? "rotate(90deg)" : "rotate(0deg)" }}
                 >
-                  {PHASES.map((p) => {
-                    const status =
-                      stats.cycleDay > p.range[1]
-                        ? "past"
-                        : stats.cycleDay >= p.range[0] && stats.cycleDay <= p.range[1]
-                        ? "current"
-                        : "future";
-                    const expanded = expandedPhaseKey === p.key;
-                    const statusLabel = status === "past" ? "これまで" : status === "current" ? "今ここ" : "これから";
-                    return (
-                      <div
-                        key={p.key}
-                        style={{ borderColor: status === "current" ? p.color : "#D8D2C4" }}
-                        className="border rounded-lg overflow-hidden"
-                      >
-                        <button
-                          onClick={() => setExpandedPhaseKey(expanded ? null : p.key)}
-                          style={{ background: status === "current" ? `${p.color}22` : "transparent" }}
-                          className="w-full flex items-center justify-between px-3 py-2 text-left"
+                  ▸
+                </span>
+              </button>
+
+              {/* カード自体が伸びるアコーディオン */}
+              <div
+                className="grid transition-all duration-300 ease-out"
+                style={{ gridTemplateRows: timelineOpen ? "1fr" : "0fr" }}
+              >
+                <div className="overflow-hidden">
+                  <div style={{ borderTop: "1px solid #D8D2C4" }} className="p-4 space-y-2">
+                    {PHASES.map((p) => {
+                      const status =
+                        stats.cycleDay > p.range[1]
+                          ? "past"
+                          : stats.cycleDay >= p.range[0] && stats.cycleDay <= p.range[1]
+                          ? "current"
+                          : "future";
+                      const expanded = expandedPhaseKey === p.key;
+                      const statusLabel = status === "past" ? "これまで" : status === "current" ? "今ここ" : "これから";
+                      return (
+                        <div
+                          key={p.key}
+                          style={{ borderColor: status === "current" ? p.color : "#D8D2C4" }}
+                          className="border rounded-lg overflow-hidden bg-white/60"
                         >
-                          <div className="flex items-center gap-2 min-w-0">
-                            <span style={{ background: p.color, color: "#F5F2EA" }} className="text-[10px] font-bold px-2 py-0.5 rounded-full shrink-0">
-                              {statusLabel}
-                            </span>
-                            <span className="text-sm font-bold shrink-0">{p.name}</span>
-                            <span className="text-[10px] text-stone-400 truncate">
-                              {p.range[1] === Infinity ? `${p.range[0]}日目〜` : `${p.range[0]}〜${p.range[1]}日目`}
-                            </span>
-                          </div>
-                          <span className="text-xs text-stone-400 shrink-0">{expanded ? "−" : "+"}</span>
-                        </button>
-                        {expanded && (
-                          <div className="px-3 pb-3">
-                            <p className="text-xs font-semibold mb-1">{p.tagline}</p>
-                            <p className="text-xs text-stone-600 leading-relaxed">{p.detail}</p>
-                          </div>
-                        )}
-                      </div>
-                    );
-                  })}
+                          <button
+                            onClick={() => setExpandedPhaseKey(expanded ? null : p.key)}
+                            style={{ background: status === "current" ? `${p.color}22` : "transparent" }}
+                            className="w-full flex items-center justify-between px-3 py-2 text-left"
+                          >
+                            <div className="flex items-center gap-2 min-w-0">
+                              <span style={{ background: p.color, color: "#F5F2EA" }} className="text-[10px] font-bold px-2 py-0.5 rounded-full shrink-0">
+                                {statusLabel}
+                              </span>
+                              <span className="text-sm font-bold shrink-0">{p.name}</span>
+                              <span className="text-[10px] text-stone-400 truncate">
+                                {p.range[1] === Infinity ? `${p.range[0]}日目〜` : `${p.range[0]}〜${p.range[1]}日目`}
+                              </span>
+                            </div>
+                            <span className="text-xs text-stone-400 shrink-0">{expanded ? "−" : "+"}</span>
+                          </button>
+                          {expanded && (
+                            <div className="px-3 pb-3">
+                              <p className="text-xs font-semibold mb-1">{p.tagline}</p>
+                              <p className="text-xs text-stone-600 leading-relaxed">{p.detail}</p>
+                            </div>
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
                 </div>
               </div>
             </div>
