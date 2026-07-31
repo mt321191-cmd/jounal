@@ -238,6 +238,162 @@ function Onboarding({ onFinish }) {
   );
 }
 
+function GraduationScreen({ goal, stats, onContinue, onNewGoal, onViewHistory }) {
+  const g = stats.graduation;
+  const bg = g.achieved ? "#EAF0E4" : "#F5EAE2";
+  const accent = g.achieved ? "#3F5A2F" : "#8A4A20";
+  return (
+    <div
+      style={{
+        background: bg,
+        minHeight: "100dvh",
+        fontFamily: "'Hiragino Kaku Gothic ProN', 'Yu Gothic', sans-serif",
+        color: "#2A2A28",
+        paddingTop: "calc(env(safe-area-inset-top) + 2rem)",
+        paddingBottom: "calc(env(safe-area-inset-bottom) + 2rem)",
+      }}
+      className="flex flex-col"
+    >
+      <div className="max-w-md mx-auto w-full px-6 flex-1 flex flex-col">
+        <div className="text-center mb-6">
+          <div className="text-6xl mb-3">{g.achieved ? "🎉" : "🌱"}</div>
+          <p className="text-xs font-bold tracking-wide" style={{ color: accent }}>
+            30日間習慣ジャーナル・結果
+          </p>
+          <h1
+            style={{ fontFamily: "'Hiragino Mincho ProN', 'Yu Mincho', serif" }}
+            className="text-2xl font-bold mt-1"
+          >
+            {g.achieved ? "30日、達成しました" : "今回は未達でした"}
+          </h1>
+        </div>
+
+        <div style={{ borderColor: "#2A2A28" }} className="border rounded-xl p-4 mb-4 bg-white/60">
+          <p className="text-xs font-bold text-stone-500 mb-0.5">目標</p>
+          <p className="text-lg font-bold mb-2 break-words">{goal.title}</p>
+          {goal.vision && (
+            <div style={{ background: "#EAF0E4", borderColor: "#3F5A2F" }} className="border-l-4 rounded-lg px-3 py-2">
+              <p className="text-[11px] font-bold mb-0.5" style={{ color: "#3F5A2F" }}>
+                🎯 目指していた未来
+              </p>
+              <p className="text-sm font-bold leading-snug">{goal.vision}</p>
+            </div>
+          )}
+        </div>
+
+        <div style={{ borderColor: "#2A2A28" }} className="border rounded-xl p-4 mb-6 bg-white/60">
+          <div className="flex gap-3 mb-4">
+            <div className="flex-1 text-center rounded-lg py-2" style={{ background: "#F0EAD8" }}>
+              <div style={{ fontFamily: "'SFMono-Regular', Menlo, monospace" }} className="text-xl font-bold">
+                {g.rate30}%
+              </div>
+              <div className="text-[10px] text-stone-500">30日間の達成率</div>
+            </div>
+            <div className="flex-1 text-center rounded-lg py-2" style={{ background: "#F0EAD8" }}>
+              <div style={{ fontFamily: "'SFMono-Regular', Menlo, monospace" }} className="text-xl font-bold">
+                {g.hasConsecutiveSkip ? "あり" : "なし"}
+              </div>
+              <div className="text-[10px] text-stone-500">2日連続休み</div>
+            </div>
+          </div>
+          <p className="text-xs text-stone-500 mb-2">フェーズ別達成率</p>
+          <div className="space-y-2">
+            {stats.phaseStats.map((p) => (
+              <div key={p.key}>
+                <div className="flex justify-between text-[11px] text-stone-600 mb-0.5">
+                  <span>{p.name}</span>
+                  <span>{p.total > 0 ? Math.round((p.done / p.total) * 100) : 0}%（{p.done}/{p.total}日）</span>
+                </div>
+                <div className="h-1.5 rounded-full" style={{ background: "#E3DCC9" }}>
+                  <div className="h-1.5 rounded-full" style={{ width: `${p.total > 0 ? (p.done / p.total) * 100 : 0}%`, background: p.color }} />
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        <div className="mt-auto flex flex-col gap-2">
+          <button onClick={onNewGoal} style={{ background: "#2A2A28" }} className="text-white rounded-lg py-3 text-sm font-semibold">
+            新しい目標を始める
+          </button>
+          <button onClick={onContinue} style={{ borderColor: "#2A2A28" }} className="border rounded-lg py-3 text-sm">
+            同じ目標を続ける
+          </button>
+          <button onClick={onViewHistory} className="text-xs text-stone-500 underline mt-2">
+            達成履歴を見る
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function HistoryScreen({ history, onBack, currentGoal, currentStats }) {
+  return (
+    <div
+      style={{
+        background: "#EDE8DD",
+        minHeight: "100dvh",
+        fontFamily: "'Hiragino Kaku Gothic ProN', 'Yu Gothic', sans-serif",
+        color: "#2A2A28",
+        paddingTop: "env(safe-area-inset-top)",
+        paddingBottom: "calc(env(safe-area-inset-bottom) + 3rem)",
+      }}
+    >
+      <div className="max-w-md mx-auto px-5 pt-8">
+        <button onClick={onBack} className="text-xs text-stone-500 mb-4 underline">
+          ← 戻る
+        </button>
+        <h1 style={{ fontFamily: "'Hiragino Mincho ProN', 'Yu Mincho', serif" }} className="text-xl font-bold mb-1">
+          達成履歴
+        </h1>
+        <p className="text-xs text-stone-500 mb-6">これまでに完走した30日サイクルの記録</p>
+
+        {currentGoal && currentStats && (
+          <div style={{ borderColor: "#3F5A6B" }} className="border rounded-xl p-4 bg-white/60 mb-4">
+            <div className="flex items-center justify-between mb-2">
+              <span style={{ background: "#3F5A6B", color: "#F5F2EA" }} className="text-xs font-bold px-2 py-0.5 rounded-full">
+                🌱 進行中
+              </span>
+              <span style={{ fontFamily: "'SFMono-Regular', Menlo, monospace" }} className="text-[10px] text-stone-400">
+                {currentGoal.createdDate} 〜（{currentStats.cycleDay}/30日目）
+              </span>
+            </div>
+            <p className="text-base font-bold mb-1 break-words">{currentGoal.title}</p>
+            {currentGoal.vision && <p className="text-xs text-stone-600 mb-1">🎯 {currentGoal.vision}</p>}
+            <p className="text-xs text-stone-500">これまでの達成率 {currentStats.rate30}%</p>
+          </div>
+        )}
+
+        {history.length === 0 && !currentGoal ? (
+          <p className="text-sm text-stone-500">まだ記録がありません。30日サイクルを完走すると、ここに残ります。</p>
+        ) : (
+          <ul className="space-y-3">
+            {history.map((h) => (
+              <li key={h.id} style={{ borderColor: "#2A2A28" }} className="border rounded-xl p-4 bg-white/40">
+                <div className="flex items-center justify-between mb-2">
+                  <span
+                    style={{ background: h.achieved ? "#2B3A2F" : "#B5511F", color: "#F5F2EA" }}
+                    className="text-xs font-bold px-2 py-0.5 rounded-full"
+                  >
+                    {h.achieved ? "🎉 達成" : "🌱 未達"}
+                  </span>
+                  <span style={{ fontFamily: "'SFMono-Regular', Menlo, monospace" }} className="text-[10px] text-stone-400">
+                    {h.startDate} 〜 {h.endDate}
+                  </span>
+                </div>
+                <p className="text-base font-bold mb-1 break-words">{h.title}</p>
+                {h.vision && <p className="text-xs text-stone-600 mb-1">🎯 {h.vision}</p>}
+                <p className="text-xs text-stone-500">達成率 {h.rate30}%</p>
+              </li>
+            ))}
+          </ul>
+        )}
+      </div>
+    </div>
+  );
+}
+
 export default function HabitJournal() {
   const [loading, setLoading] = useState(true);
   const [persistent, setPersistent] = useState(true);
@@ -256,8 +412,12 @@ export default function HabitJournal() {
   const [step, setStep] = useState(1);
   const [showDone, setShowDone] = useState(false);
   const [showInsightForm, setShowInsightForm] = useState(false);
-  const [graduationDismissed, setGraduationDismissed] = useState(false);
   const [confirmingReset, setConfirmingReset] = useState(false);
+  const [history, setHistory] = useState([]);
+  const [view, setView] = useState("main"); // "main" | "history"
+  const [menuOpen, setMenuOpen] = useState(false);
+  const [timelineOpen, setTimelineOpen] = useState(false);
+  const [expandedPhaseKey, setExpandedPhaseKey] = useState(null);
 
   useEffect(() => {
     (async () => {
@@ -270,6 +430,8 @@ export default function HabitJournal() {
       setActionLogs(logs ? JSON.parse(logs.value) : {});
       const ent = await safeGet("entries");
       setEntries(ent ? JSON.parse(ent.value) : []);
+      const hist = await safeGet("goal-history");
+      setHistory(hist ? JSON.parse(hist.value) : []);
       setLoading(false);
     })();
   }, []);
@@ -296,7 +458,6 @@ export default function HabitJournal() {
     setGoalDraft("");
     setVisionDraft("");
     setActionLogs({});
-    setGraduationDismissed(false);
     safeSet("goal", JSON.stringify(g)).then((ok) => {
       if (!ok) setPersistent(false);
     });
@@ -306,9 +467,30 @@ export default function HabitJournal() {
   const handleDeleteGoal = () => {
     setGoal(null);
     setActionLogs({});
-    setGraduationDismissed(false);
     safeDelete("goal");
     safeDelete("action-logs");
+  };
+
+  const handleContinueGoal = () => {
+    const updated = { ...goal, graduationSeen: true };
+    setGoal(updated);
+    safeSet("goal", JSON.stringify(updated));
+  };
+
+  const handleGraduationNewGoal = (graduation) => {
+    const record = {
+      id: `${Date.now()}`,
+      title: goal.title,
+      vision: goal.vision,
+      startDate: goal.createdDate,
+      endDate: todayStr(),
+      achieved: graduation.achieved,
+      rate30: graduation.rate30,
+    };
+    const nextHistory = [record, ...history];
+    setHistory(nextHistory);
+    safeSet("goal-history", JSON.stringify(nextHistory));
+    handleDeleteGoal();
   };
 
   const handleCheckIn = async (status) => {
@@ -432,6 +614,22 @@ export default function HabitJournal() {
     stats = { totalDays, cycleDay, phase, streak, rate30, doneCount, freezeCount, freezeRemaining, trackedDays, phaseStats, graduation };
   }
 
+  if (view === "history") {
+    return <HistoryScreen history={history} onBack={() => setView("main")} currentGoal={goal} currentStats={stats} />;
+  }
+
+  if (goal && stats && stats.graduation && !goal.graduationSeen) {
+    return (
+      <GraduationScreen
+        goal={goal}
+        stats={stats}
+        onContinue={handleContinueGoal}
+        onNewGoal={() => handleGraduationNewGoal(stats.graduation)}
+        onViewHistory={() => setView("history")}
+      />
+    );
+  }
+
   const todayStatus = actionLogs[todayStr()];
   const actionEntries = entries.filter((e) => e.category === "action");
 
@@ -446,13 +644,50 @@ export default function HabitJournal() {
         paddingBottom: "calc(env(safe-area-inset-bottom) + 4rem)",
       }}
     >
-      <div className="max-w-md mx-auto px-5 pt-8">
-        <p style={{ fontFamily: "'SFMono-Regular', Menlo, monospace", letterSpacing: "0.15em" }} className="text-xs text-stone-500 uppercase mb-1">
-          Habit Journal
-        </p>
-        <h1 style={{ fontFamily: "'Hiragino Mincho ProN', 'Yu Mincho', serif" }} className="text-2xl font-bold mb-6">
-          30日間習慣ジャーナル
-        </h1>
+      <div className="max-w-md mx-auto px-5 pt-8 relative">
+        <div className="flex items-start justify-between mb-6">
+          <div>
+            <p style={{ fontFamily: "'SFMono-Regular', Menlo, monospace", letterSpacing: "0.15em" }} className="text-xs text-stone-500 uppercase mb-1">
+              Habit Journal
+            </p>
+            <h1 style={{ fontFamily: "'Hiragino Mincho ProN', 'Yu Mincho', serif" }} className="text-2xl font-bold">
+              30日間習慣ジャーナル
+            </h1>
+          </div>
+
+          <div className="relative shrink-0">
+            <button
+              onClick={() => setMenuOpen((v) => !v)}
+              aria-label="メニュー"
+              style={{ borderColor: "#2A2A28" }}
+              className="border rounded-lg w-10 h-10 flex flex-col items-center justify-center gap-1"
+            >
+              <span style={{ background: "#2A2A28" }} className="block w-5 h-0.5 rounded-full" />
+              <span style={{ background: "#2A2A28" }} className="block w-5 h-0.5 rounded-full" />
+              <span style={{ background: "#2A2A28" }} className="block w-5 h-0.5 rounded-full" />
+            </button>
+
+            {menuOpen && (
+              <>
+                <div className="fixed inset-0 z-10" onClick={() => setMenuOpen(false)} />
+                <div
+                  style={{ borderColor: "#2A2A28" }}
+                  className="absolute right-0 top-12 z-20 border rounded-xl bg-white shadow-lg w-56 overflow-hidden"
+                >
+                  <button
+                    onClick={() => {
+                      setView("history");
+                      setMenuOpen(false);
+                    }}
+                    className="w-full text-left px-4 py-3 text-sm hover:bg-stone-50"
+                  >
+                    📖 達成履歴を見る{history.length > 0 ? `（${history.length}件）` : ""}
+                  </button>
+                </div>
+              </>
+            )}
+          </div>
+        </div>
 
         {error && <p className="text-xs text-red-700 mb-3">{error}</p>}
         {!persistent && (
@@ -496,39 +731,6 @@ export default function HabitJournal() {
           </div>
         )}
 
-        {/* 卒業判定（30日経過後） */}
-        {goal && stats && stats.graduation && !graduationDismissed && (
-          <div
-            style={{ borderColor: "#2A2A28", background: stats.graduation.achieved ? "#EAF0E4" : "#F5EAE2" }}
-            className="border rounded-xl p-4 mb-6 text-center"
-          >
-            <div className="text-3xl mb-2">{stats.graduation.achieved ? "🎉" : "🌱"}</div>
-            <p className="text-sm font-bold mb-1">
-              {stats.graduation.achieved ? "30日達成しました" : "今回は未達でした"}
-            </p>
-            <p className="text-xs text-stone-600 mb-3 leading-relaxed">
-              直近30日の達成率 {stats.graduation.rate30}%（目標 {ACHIEVE_RATE}%以上）
-              ／2日連続の「できなかった」{stats.graduation.hasConsecutiveSkip ? "あり(違反)" : "なし(クリア)"}
-            </p>
-            <div className="flex gap-2">
-              <button
-                onClick={() => setGraduationDismissed(true)}
-                style={{ borderColor: "#2A2A28" }}
-                className="flex-1 border rounded-lg py-2 text-sm"
-              >
-                同じ目標を続ける
-              </button>
-              <button
-                onClick={handleDeleteGoal}
-                style={{ background: "#2A2A28" }}
-                className="flex-1 text-white rounded-lg py-2 text-sm font-semibold"
-              >
-                新しい目標を始める
-              </button>
-            </div>
-          </div>
-        )}
-
         {/* 目標がある場合 */}
         {goal && stats && (
           <>
@@ -564,6 +766,65 @@ export default function HabitJournal() {
                 <p className="text-xs text-stone-600 leading-relaxed">{stats.phase.detail}</p>
               </div>
             </div>
+
+            <button
+              onClick={() => {
+                setTimelineOpen((v) => !v);
+                if (!timelineOpen) setExpandedPhaseKey(stats.phase.key);
+              }}
+              style={{ borderColor: "#2A2A28" }}
+              className="w-full border rounded-lg py-2 text-sm mb-4 flex items-center justify-center gap-1"
+            >
+              {timelineOpen ? "全体の流れを閉じる" : "全体の流れを見る（これまで・今・これから）"}
+              <span className="text-xs">{timelineOpen ? "▲" : "▼"}</span>
+            </button>
+
+            {timelineOpen && (
+              <div style={{ borderColor: "#2A2A28" }} className="border rounded-xl p-4 mb-4 bg-white/40">
+                <div className="space-y-2">
+                  {PHASES.map((p) => {
+                    const status =
+                      stats.cycleDay > p.range[1]
+                        ? "past"
+                        : stats.cycleDay >= p.range[0] && stats.cycleDay <= p.range[1]
+                        ? "current"
+                        : "future";
+                    const expanded = expandedPhaseKey === p.key;
+                    const statusLabel = status === "past" ? "これまで" : status === "current" ? "今ここ" : "これから";
+                    return (
+                      <div
+                        key={p.key}
+                        style={{ borderColor: status === "current" ? p.color : "#D8D2C4" }}
+                        className="border rounded-lg overflow-hidden"
+                      >
+                        <button
+                          onClick={() => setExpandedPhaseKey(expanded ? null : p.key)}
+                          style={{ background: status === "current" ? `${p.color}22` : "transparent" }}
+                          className="w-full flex items-center justify-between px-3 py-2 text-left"
+                        >
+                          <div className="flex items-center gap-2 min-w-0">
+                            <span style={{ background: p.color, color: "#F5F2EA" }} className="text-[10px] font-bold px-2 py-0.5 rounded-full shrink-0">
+                              {statusLabel}
+                            </span>
+                            <span className="text-sm font-bold shrink-0">{p.name}</span>
+                            <span className="text-[10px] text-stone-400 truncate">
+                              {p.range[1] === Infinity ? `${p.range[0]}日目〜` : `${p.range[0]}〜${p.range[1]}日目`}
+                            </span>
+                          </div>
+                          <span className="text-xs text-stone-400 shrink-0">{expanded ? "−" : "+"}</span>
+                        </button>
+                        {expanded && (
+                          <div className="px-3 pb-3">
+                            <p className="text-xs font-semibold mb-1">{p.tagline}</p>
+                            <p className="text-xs text-stone-600 leading-relaxed">{p.detail}</p>
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
 
             {/* 今日のチェックイン */}
             <div style={{ borderColor: "#2A2A28" }} className="border rounded-xl p-4 mb-4 bg-white/40">
