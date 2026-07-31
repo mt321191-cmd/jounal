@@ -769,19 +769,52 @@ export default function HabitJournal() {
 
             <button
               onClick={() => {
-                setTimelineOpen((v) => !v);
-                if (!timelineOpen) setExpandedPhaseKey(stats.phase.key);
+                setTimelineOpen(true);
+                setExpandedPhaseKey(stats.phase.key);
               }}
               style={{ borderColor: "#2A2A28" }}
               className="w-full border rounded-lg py-2 text-sm mb-4 flex items-center justify-center gap-1"
             >
-              {timelineOpen ? "全体の流れを閉じる" : "全体の流れを見る（これまで・今・これから）"}
-              <span className="text-xs">{timelineOpen ? "▲" : "▼"}</span>
+              全体の流れを見る（これまで・今・これから）
+              <span className="text-xs">▸</span>
             </button>
 
-            {timelineOpen && (
-              <div style={{ borderColor: "#2A2A28" }} className="border rounded-xl p-4 mb-4 bg-white/40">
-                <div className="space-y-2">
+            {/* 全体の流れ：ボトムシート */}
+            <div
+              onClick={() => setTimelineOpen(false)}
+              style={{ background: "rgba(0,0,0,0.4)" }}
+              className={`fixed inset-0 z-30 transition-opacity duration-300 ${
+                timelineOpen ? "opacity-100 pointer-events-auto" : "opacity-0 pointer-events-none"
+              }`}
+            />
+            <div
+              style={{
+                background: "#EDE8DD",
+                borderTopLeftRadius: "20px",
+                borderTopRightRadius: "20px",
+                maxHeight: "82vh",
+                boxShadow: "0 -4px 24px rgba(0,0,0,0.15)",
+              }}
+              className={`fixed left-0 right-0 bottom-0 z-40 flex flex-col transition-transform duration-300 ease-out ${
+                timelineOpen ? "translate-y-0" : "translate-y-full"
+              }`}
+            >
+              <div className="max-w-md mx-auto w-full px-5 pt-3 flex flex-col overflow-hidden" style={{ maxHeight: "82vh" }}>
+                <div className="flex justify-center mb-3 shrink-0">
+                  <div style={{ background: "#D8D2C4" }} className="w-10 h-1.5 rounded-full" />
+                </div>
+                <div className="flex items-center justify-between mb-4 shrink-0">
+                  <h2 style={{ fontFamily: "'Hiragino Mincho ProN', 'Yu Mincho', serif" }} className="text-lg font-bold">
+                    全体の流れ
+                  </h2>
+                  <button onClick={() => setTimelineOpen(false)} className="text-xs text-stone-500 underline">
+                    閉じる
+                  </button>
+                </div>
+                <div
+                  className="space-y-2 overflow-y-auto"
+                  style={{ paddingBottom: "calc(env(safe-area-inset-bottom) + 1.5rem)" }}
+                >
                   {PHASES.map((p) => {
                     const status =
                       stats.cycleDay > p.range[1]
@@ -824,7 +857,7 @@ export default function HabitJournal() {
                   })}
                 </div>
               </div>
-            )}
+            </div>
 
             {/* 今日のチェックイン */}
             <div style={{ borderColor: "#2A2A28" }} className="border rounded-xl p-4 mb-4 bg-white/40">
