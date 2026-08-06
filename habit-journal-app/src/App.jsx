@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from "react";
+￥import { useState, useEffect, useCallback } from "react";
 
 // ---- 習慣化の3段階（30日サイクル） ----
 const PHASES = [
@@ -621,7 +621,7 @@ function BottomBar({ active, onHistory }) {
           達成履歴
         </button>
         <a
-          href="#"
+          href="/articles.html"
           target="_blank"
           rel="noopener noreferrer"
           style={{ color: "#8A8577", borderLeft: "1px solid #D8D2C4" }}
