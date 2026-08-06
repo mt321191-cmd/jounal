@@ -1,4 +1,4 @@
-￥import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback } from "react";
 
 // ---- 習慣化の3段階（30日サイクル） ----
 const PHASES = [
