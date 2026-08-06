@@ -1,0 +1,105 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>やる気の記事｜準備中｜30日間習慣ジャーナル</title>
+<style>
+  :root{
+    --paper:#EDE8DD;
+    --card:#F5F2EA;
+    --ink:#2A2A28;
+    --ink-soft:#6B675E;
+    --rust:#B5511F;
+    --moss:#6B7A3F;
+    --slate:#3F5A6B;
+    --forest:#2B3A2F;
+    --line:#D8D2C4;
+  }
+  *{ box-sizing:border-box; }
+  body{
+    margin:0;
+    min-height:100dvh;
+    background:var(--paper);
+    color:var(--ink);
+    font-family:'Hiragino Kaku Gothic ProN','Yu Gothic',-apple-system,sans-serif;
+    line-height:1.8;
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    padding:72px 24px 48px;
+  }
+  .mincho{ font-family:'Hiragino Mincho ProN','Yu Mincho',serif; }
+  .wrap{ max-width:520px; width:100%; text-align:center; }
+  .emoji{ font-size:56px; margin-bottom:20px; }
+  .eyebrow{
+    font-size:12px; letter-spacing:.16em; color:var(--ink-soft);
+    margin-bottom:14px;
+  }
+  h1{ font-size:26px; margin:0 0 14px; }
+  p.lead{ color:var(--ink-soft); font-size:14.5px; margin:0 0 40px; }
+
+  .list{ text-align:left; margin:0 0 40px; }
+  .list-title{ font-size:12px; color:var(--ink-soft); margin-bottom:14px; }
+  .item{
+    display:flex; align-items:flex-start; gap:12px;
+    padding:14px 0;
+    border-bottom:1px solid var(--line);
+  }
+  .item:first-child{ border-top:1px solid var(--line); }
+  .tag{
+    flex-shrink:0;
+    font-size:10.5px; font-weight:700; color:var(--paper);
+    padding:3px 9px; border-radius:999px;
+    margin-top:2px;
+  }
+  .item-title{ font-size:14px; }
+  .soon{ font-size:11px; color:var(--ink-soft); }
+
+  .back{
+    display:inline-flex; align-items:center; gap:6px;
+    font-size:13px; font-weight:700;
+    padding:12px 26px; border-radius:999px;
+    background:var(--ink); color:var(--paper);
+    text-decoration:none;
+  }
+</style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="emoji">🚧</div>
+    <p class="eyebrow">ARTICLES</p>
+    <h1 class="mincho">やる気の記事、只今準備中です</h1>
+    <p class="lead">反抗期・不安定期・倦怠期など、習慣化のつまずきをテーマにした記事を順次公開していきます。もうしばらくお待ちください。</p>
+
+    <div class="list">
+      <p class="list-title">近日公開予定</p>
+      <div class="item">
+        <span class="tag" style="background:var(--rust)">反抗期</span>
+        <div>
+          <div class="item-title">三日坊主なのは意志が弱いからじゃない。"反抗期"のせいだった</div>
+          <div class="soon">近日公開</div>
+        </div>
+      </div>
+      <div class="item">
+        <span class="tag" style="background:var(--moss)">不安定期</span>
+        <div>
+          <div class="item-title">習慣化6日目からが本当の勝負。崩れやすい"不安定期"の乗り切り方</div>
+          <div class="soon">近日公開</div>
+        </div>
+      </div>
+      <div class="item">
+        <span class="tag" style="background:var(--slate)">倦怠期</span>
+        <div>
+          <div class="item-title">なぜ22日目あたりで急にやる気がなくなるのか。倦怠期の正体</div>
+          <div class="soon">近日公開</div>
+        </div>
+      </div>
+    </div>
+
+    <a class="back" href="javascript:window.close()" onclick="if(window.history.length>1){window.history.back();return false;}">
+      ← アプリに戻る
+    </a>
+  </div>
+</body>
+</html>
