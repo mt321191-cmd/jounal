@@ -47,6 +47,7 @@ const CATEGORIES = [
 
 const ACHIEVE_RATE = 70; // 達成に必要な直近30日の達成率(%)
 const FREEZE_ALLOWANCE = 1; // 30日サイクルあたりのフリーズ回数
+const MILESTONES = [7, 14, 21, 30]; // 連続記録バッジの解禁日数
 
 const ONBOARDING_SLIDES = [
   {
@@ -89,14 +90,210 @@ function addDays(dateStr, n) {
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
 }
 
-// window.storage が使えない環境でもアプリが落ちないようにするラッパー
-const hasStorage = () => typeof window !== "undefined" && window.storage;
+// その目標が始まって以降、最長で何日連続（done/freeze）が続いたか
+function computeBestStreak(logs, startDate, totalDays) {
+  let best = 0;
+  let run = 0;
+  for (let cd = 1; cd <= totalDays; cd++) {
+    const d = addDays(startDate, cd - 1);
+    if (logs[d] === "done" || logs[d] === "freeze") {
+      run += 1;
+      if (run > best) best = run;
+    } else {
+      run = 0;
+    }
+  }
+  return best;
+}
+
+// ---- シェア画像（canvasで直接描画。外部ライブラリ不要） ----
+function wrapCanvasText(ctx, text, maxWidth) {
+  const lines = [];
+  let line = "";
+  for (const ch of text) {
+    const test = line + ch;
+    if (ctx.measureText(test).width > maxWidth && line) {
+      lines.push(line);
+      line = ch;
+    } else {
+      line = test;
+    }
+  }
+  if (line) lines.push(line);
+  return lines;
+}
+
+function buildShareCanvas({ kind, goal, stats }) {
+  const canvas = document.createElement("canvas");
+  const W = 1080;
+  const H = 1350;
+  canvas.width = W;
+  canvas.height = H;
+  const ctx = canvas.getContext("2d");
+  const sans = "'Hiragino Kaku Gothic ProN','Yu Gothic',sans-serif";
+  const mincho = "'Hiragino Mincho ProN','Yu Mincho',serif";
+  const mono = "'SFMono-Regular',Menlo,monospace";
+
+  const achieved = kind === "result" ? stats.graduation.achieved : null;
+  const bg = kind === "result" ? (achieved ? "#EAF0E4" : "#F5EAE2") : "#EDE8DD";
+
+  ctx.fillStyle = bg;
+  ctx.fillRect(0, 0, W, H);
+
+  let y = 120;
+
+  // 見出し絵文字
+  ctx.textAlign = "center";
+  ctx.font = `110px ${sans}`;
+  ctx.fillText(kind === "result" ? (achieved ? "🎉" : "🌱") : "🔥", W / 2, y);
+  y += 90;
+
+  ctx.fillStyle = "#3F5A2F";
+  ctx.font = `bold 28px ${sans}`;
+  ctx.fillText("30日間習慣ジャーナル", W / 2, y);
+  y += 60;
+
+  ctx.fillStyle = "#2A2A28";
+  ctx.font = `bold 52px ${mincho}`;
+  ctx.fillText(
+    kind === "result" ? (achieved ? "30日、達成しました" : "30日、走りきりました") : `連続 ${stats.streak}日目`,
+    W / 2,
+    y
+  );
+  y += 90;
+
+  // 目標
+  ctx.textAlign = "left";
+  ctx.fillStyle = "#6B675E";
+  ctx.font = `26px ${sans}`;
+  ctx.fillText("目標", 90, y);
+  y += 48;
+  ctx.fillStyle = "#2A2A28";
+  ctx.font = `bold 42px ${sans}`;
+  const titleLines = wrapCanvasText(ctx, goal.title, W - 180).slice(0, 2);
+  titleLines.forEach((line) => {
+    ctx.fillText(line, 90, y);
+    y += 56;
+  });
+  y += 30;
+
+  // 統計カード
+  const cardTop = y;
+  const cardH = 220;
+  ctx.fillStyle = "rgba(255,255,255,0.55)";
+  ctx.strokeStyle = "#2A2A28";
+  ctx.lineWidth = 3;
+  roundRect(ctx, 90, cardTop, W - 180, cardH, 24);
+  ctx.fill();
+  ctx.stroke();
+
+  const statW = (W - 180) / 2;
+  ctx.textAlign = "center";
+  const rateVal = kind === "result" ? stats.graduation.rate30 : stats.rate30;
+  ctx.fillStyle = "#2A2A28";
+  ctx.font = `bold 64px ${mono}`;
+  ctx.fillText(`${rateVal}%`, 90 + statW / 2, cardTop + 100);
+  ctx.font = `24px ${sans}`;
+  ctx.fillStyle = "#6B675E";
+  ctx.fillText(kind === "result" ? "30日間の達成率" : "直近の達成率", 90 + statW / 2, cardTop + 140);
+
+  ctx.strokeStyle = "#D8D2C4";
+  ctx.beginPath();
+  ctx.moveTo(90 + statW, cardTop + 30);
+  ctx.lineTo(90 + statW, cardTop + cardH - 30);
+  ctx.stroke();
+
+  const rightVal = kind === "result" ? stats.streak : stats.streak;
+  ctx.fillStyle = "#2A2A28";
+  ctx.font = `bold 64px ${mono}`;
+  ctx.fillText(`${rightVal}`, 90 + statW + statW / 2, cardTop + 100);
+  ctx.font = `24px ${sans}`;
+  ctx.fillStyle = "#6B675E";
+  ctx.fillText("連続日数", 90 + statW + statW / 2, cardTop + 140);
+
+  y = cardTop + cardH + 70;
+
+  // フェーズ別バー
+  ctx.textAlign = "left";
+  ctx.fillStyle = "#6B675E";
+  ctx.font = `24px ${sans}`;
+  ctx.fillText("フェーズ別達成率", 90, y);
+  y += 36;
+
+  stats.phaseStats.forEach((p) => {
+    const pct = p.total > 0 ? p.done / p.total : 0;
+    ctx.fillStyle = "#4A473F";
+    ctx.font = `24px ${sans}`;
+    ctx.fillText(p.name, 90, y);
+    ctx.textAlign = "right";
+    ctx.fillText(`${Math.round(pct * 100)}%`, W - 90, y);
+    ctx.textAlign = "left";
+    y += 14;
+    ctx.fillStyle = "#E3DCC9";
+    roundRect(ctx, 90, y, W - 180, 18, 9);
+    ctx.fill();
+    ctx.fillStyle = p.color;
+    roundRect(ctx, 90, y, (W - 180) * pct, 18, 9);
+    ctx.fill();
+    y += 50;
+  });
+
+  // フッター
+  ctx.textAlign = "center";
+  ctx.fillStyle = "#A8A398";
+  ctx.font = `22px ${sans}`;
+  ctx.fillText("30日間、気づきを行動に。", W / 2, H - 60);
+
+  return canvas;
+}
+
+function roundRect(ctx, x, y, w, h, r) {
+  const rr = Math.min(r, w / 2, h / 2);
+  ctx.beginPath();
+  ctx.moveTo(x + rr, y);
+  ctx.arcTo(x + w, y, x + w, y + h, rr);
+  ctx.arcTo(x + w, y + h, x, y + h, rr);
+  ctx.arcTo(x, y + h, x, y, rr);
+  ctx.arcTo(x, y, x + w, y, rr);
+  ctx.closePath();
+}
+
+async function shareOrDownloadCanvas(canvas, filename) {
+  const blob = await new Promise((resolve) => canvas.toBlob(resolve, "image/png"));
+  if (!blob) return false;
+  try {
+    if (navigator.share && navigator.canShare) {
+      const file = new File([blob], filename, { type: "image/png" });
+      if (navigator.canShare({ files: [file] })) {
+        await navigator.share({ files: [file], title: "30日間習慣ジャーナル" });
+        return true;
+      }
+    }
+  } catch {
+    // ユーザーがキャンセルした場合などはダウンロードにフォールバック
+  }
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = filename;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  URL.revokeObjectURL(url);
+  return true;
+}
+
+// このデプロイ版はブラウザの localStorage を使って保存する
+// (window.storage は Claude のアーティファクト内でのみ使えるAPIのため)
+const hasStorage = () => typeof window !== "undefined" && window.localStorage;
 
 async function safeGet(key) {
   if (!hasStorage()) return null;
   try {
-    return await window.storage.get(key, false);
-  } catch {
+    const raw = window.localStorage.getItem(key);
+    return raw === null ? null : { value: raw };
+  } catch (e) {
+    console.error("storage get failed", key, e);
     return null;
   }
 }
@@ -104,7 +301,7 @@ async function safeGet(key) {
 async function safeSet(key, value) {
   if (!hasStorage()) return false;
   try {
-    await window.storage.set(key, value, false);
+    window.localStorage.setItem(key, value);
     return true;
   } catch (e) {
     console.error("storage set failed", key, e);
@@ -115,7 +312,7 @@ async function safeSet(key, value) {
 async function safeDelete(key) {
   if (!hasStorage()) return false;
   try {
-    await window.storage.delete(key, false);
+    window.localStorage.removeItem(key);
     return true;
   } catch (e) {
     console.error("storage delete failed", key, e);
@@ -313,6 +510,16 @@ function GraduationScreen({ goal, stats, onContinue, onNewGoal, onViewHistory })
         </div>
 
         <div className="mt-auto flex flex-col gap-2">
+          <button
+            onClick={() => {
+              const canvas = buildShareCanvas({ kind: "result", goal, stats });
+              shareOrDownloadCanvas(canvas, "habit-journal-result.png");
+            }}
+            style={{ borderColor: "#2A2A28" }}
+            className="border rounded-lg py-3 text-sm font-semibold"
+          >
+            📤 結果をシェア画像で保存
+          </button>
           <button onClick={onNewGoal} style={{ background: "#2A2A28" }} className="text-white rounded-lg py-3 text-sm font-semibold">
             新しい目標を始める
           </button>
@@ -337,7 +544,7 @@ function HistoryScreen({ history, onBack, currentGoal, currentStats }) {
         fontFamily: "'Hiragino Kaku Gothic ProN', 'Yu Gothic', sans-serif",
         color: "#2A2A28",
         paddingTop: "env(safe-area-inset-top)",
-        paddingBottom: "calc(env(safe-area-inset-bottom) + 3rem)",
+        paddingBottom: "calc(env(safe-area-inset-bottom) + 6rem)",
       }}
     >
       <div className="max-w-md mx-auto px-5 pt-8">
@@ -394,6 +601,40 @@ function HistoryScreen({ history, onBack, currentGoal, currentStats }) {
   );
 }
 
+function BottomBar({ active, onHistory }) {
+  return (
+    <div
+      style={{
+        background: "#F5F2EA",
+        borderTop: "1px solid #2A2A28",
+        paddingBottom: "env(safe-area-inset-bottom)",
+      }}
+      className="fixed left-0 right-0 bottom-0 z-30"
+    >
+      <div className="max-w-md mx-auto grid grid-cols-2">
+        <button
+          onClick={onHistory}
+          style={{ color: active === "history" ? "#2A2A28" : "#8A8577" }}
+          className="flex flex-col items-center justify-center gap-1 py-3 text-xs font-semibold"
+        >
+          <span className="text-lg leading-none">📖</span>
+          達成履歴
+        </button>
+        <a
+          href="#"
+          target="_blank"
+          rel="noopener noreferrer"
+          style={{ color: "#8A8577", borderLeft: "1px solid #D8D2C4" }}
+          className="flex flex-col items-center justify-center gap-1 py-3 text-xs font-semibold"
+        >
+          <span className="text-lg leading-none">📰</span>
+          やる気の記事
+        </a>
+      </div>
+    </div>
+  );
+}
+
 export default function HabitJournal() {
   const [loading, setLoading] = useState(true);
   const [persistent, setPersistent] = useState(true);
@@ -415,9 +656,9 @@ export default function HabitJournal() {
   const [confirmingReset, setConfirmingReset] = useState(false);
   const [history, setHistory] = useState([]);
   const [view, setView] = useState("main"); // "main" | "history"
-  const [menuOpen, setMenuOpen] = useState(false);
   const [timelineOpen, setTimelineOpen] = useState(false);
   const [expandedPhaseKey, setExpandedPhaseKey] = useState(null);
+  const [badgeToast, setBadgeToast] = useState(null);
 
   useEffect(() => {
     (async () => {
@@ -495,6 +736,13 @@ export default function HabitJournal() {
 
   const handleCheckIn = async (status) => {
     const next = { ...actionLogs, [todayStr()]: status };
+    if (goal) {
+      const totalDays = daysSince(goal.createdDate);
+      const prevBest = computeBestStreak(actionLogs, goal.createdDate, totalDays);
+      const newBest = computeBestStreak(next, goal.createdDate, totalDays);
+      const crossed = MILESTONES.find((m) => newBest >= m && prevBest < m);
+      if (crossed) setBadgeToast(crossed);
+    }
     setActionLogs(next);
     await persistLogs(next);
   };
@@ -611,11 +859,18 @@ export default function HabitJournal() {
       graduation = { achieved, rate30, hasConsecutiveSkip };
     }
 
-    stats = { totalDays, cycleDay, phase, streak, rate30, doneCount, freezeCount, freezeRemaining, trackedDays, phaseStats, graduation };
+    const bestStreak = computeBestStreak(actionLogs, goal.createdDate, totalDays);
+
+    stats = { totalDays, cycleDay, phase, streak, bestStreak, rate30, doneCount, freezeCount, freezeRemaining, trackedDays, phaseStats, graduation };
   }
 
   if (view === "history") {
-    return <HistoryScreen history={history} onBack={() => setView("main")} currentGoal={goal} currentStats={stats} />;
+    return (
+      <>
+        <HistoryScreen history={history} onBack={() => setView("main")} currentGoal={goal} currentStats={stats} />
+        <BottomBar active="history" onHistory={() => setView("history")} />
+      </>
+    );
   }
 
   if (goal && stats && stats.graduation && !goal.graduationSeen) {
@@ -641,53 +896,34 @@ export default function HabitJournal() {
         fontFamily: "'Hiragino Kaku Gothic ProN', 'Yu Gothic', sans-serif",
         color: "#2A2A28",
         paddingTop: "env(safe-area-inset-top)",
-        paddingBottom: "calc(env(safe-area-inset-bottom) + 4rem)",
+        paddingBottom: "calc(env(safe-area-inset-bottom) + 7rem)",
       }}
     >
       <div className="max-w-md mx-auto px-5 pt-8 relative">
-        <div className="flex items-start justify-between mb-6">
-          <div>
-            <p style={{ fontFamily: "'SFMono-Regular', Menlo, monospace", letterSpacing: "0.15em" }} className="text-xs text-stone-500 uppercase mb-1">
-              Habit Journal
-            </p>
-            <h1 style={{ fontFamily: "'Hiragino Mincho ProN', 'Yu Mincho', serif" }} className="text-2xl font-bold">
-              30日間習慣ジャーナル
-            </h1>
-          </div>
-
-          <div className="relative shrink-0">
-            <button
-              onClick={() => setMenuOpen((v) => !v)}
-              aria-label="メニュー"
-              style={{ borderColor: "#2A2A28" }}
-              className="border rounded-lg w-10 h-10 flex flex-col items-center justify-center gap-1"
-            >
-              <span style={{ background: "#2A2A28" }} className="block w-5 h-0.5 rounded-full" />
-              <span style={{ background: "#2A2A28" }} className="block w-5 h-0.5 rounded-full" />
-              <span style={{ background: "#2A2A28" }} className="block w-5 h-0.5 rounded-full" />
-            </button>
-
-            {menuOpen && (
-              <>
-                <div className="fixed inset-0 z-10" onClick={() => setMenuOpen(false)} />
-                <div
-                  style={{ borderColor: "#2A2A28" }}
-                  className="absolute right-0 top-12 z-20 border rounded-xl bg-white shadow-lg w-56 overflow-hidden"
-                >
-                  <button
-                    onClick={() => {
-                      setView("history");
-                      setMenuOpen(false);
-                    }}
-                    className="w-full text-left px-4 py-3 text-sm hover:bg-stone-50"
-                  >
-                    📖 達成履歴を見る{history.length > 0 ? `（${history.length}件）` : ""}
-                  </button>
-                </div>
-              </>
-            )}
-          </div>
+        <div className="mb-6">
+          <p style={{ fontFamily: "'SFMono-Regular', Menlo, monospace", letterSpacing: "0.15em" }} className="text-xs text-stone-500 uppercase mb-1">
+            Habit Journal
+          </p>
+          <h1 style={{ fontFamily: "'Hiragino Mincho ProN', 'Yu Mincho', serif" }} className="text-2xl font-bold">
+            30日間習慣ジャーナル
+          </h1>
         </div>
+
+        {badgeToast && (
+          <div
+            style={{ borderColor: "#2A2A28", background: "#F0EAD8" }}
+            className="border rounded-xl p-4 mb-4 flex items-center gap-3"
+          >
+            <span className="text-2xl">🏅</span>
+            <div className="flex-1">
+              <p className="text-sm font-bold">{badgeToast}日連続、達成しました！</p>
+              <p className="text-xs text-stone-500">新しいバッジが解禁されました</p>
+            </div>
+            <button onClick={() => setBadgeToast(null)} className="text-xs text-stone-500 underline shrink-0">
+              閉じる
+            </button>
+          </div>
+        )}
 
         {error && <p className="text-xs text-red-700 mb-3">{error}</p>}
         {!persistent && (
@@ -919,6 +1155,40 @@ export default function HabitJournal() {
                   </div>
                 ))}
               </div>
+
+              {/* 連続記録バッジ */}
+              <div className="mt-4 pt-4" style={{ borderTop: "1px solid #E3DCC9" }}>
+                <p className="text-xs text-stone-500 mb-2">連続記録バッジ（ベスト{stats.bestStreak}日）</p>
+                <div className="flex gap-2">
+                  {MILESTONES.map((m) => {
+                    const unlocked = stats.bestStreak >= m;
+                    return (
+                      <div
+                        key={m}
+                        style={{
+                          background: unlocked ? "#2B3A2F" : "#E3DCC9",
+                          color: unlocked ? "#F5F2EA" : "#A8A398",
+                        }}
+                        className="flex-1 rounded-lg py-2 text-center"
+                      >
+                        <div className="text-base leading-none mb-1">{unlocked ? "🏅" : "🔒"}</div>
+                        <div className="text-[10px] font-bold">{m}日</div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+
+              <button
+                onClick={() => {
+                  const canvas = buildShareCanvas({ kind: "progress", goal, stats });
+                  shareOrDownloadCanvas(canvas, "habit-journal-progress.png");
+                }}
+                style={{ borderColor: "#2A2A28" }}
+                className="w-full border rounded-lg py-2 text-xs font-semibold mt-4"
+              >
+                📤 今の進捗をシェア画像で保存
+              </button>
             </div>
           </>
         )}
@@ -1109,6 +1379,7 @@ export default function HabitJournal() {
           </div>
         )}
       </div>
+      <BottomBar active="main" onHistory={() => setView("history")} />
     </div>
   );
 }
